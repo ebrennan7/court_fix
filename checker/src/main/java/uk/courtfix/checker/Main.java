@@ -18,7 +18,7 @@ public final class Main {
     private Main() {}
 
     public static void main(String[] args) throws Exception {
-        LocalDate startDate = parseDate(args, LocalDate.now(LONDON));
+        LocalDate startDate = parseDate(args, LocalDate.now(LONDON), System.getenv("START_DATE"));
         int daysAhead = Integer.parseInt(System.getenv().getOrDefault("DAYS_AHEAD", "5"));
         List<Court> courts = loadCourts();
         Set<String> courtIds = courts.stream().map(Court::id).collect(Collectors.toSet());
@@ -52,17 +52,16 @@ public final class Main {
         System.out.printf("Finished: %d slots checked; %d currently bookable.%n", checked, available);
     }
 
-    private static LocalDate parseDate(String[] args, LocalDate defaultDate) {
+    static LocalDate parseDate(String[] args, LocalDate defaultDate, String envDate) {
         for (String arg : args) {
             if (arg.startsWith("--date=")) {
                 return LocalDate.parse(arg.substring("--date=".length()));
             }
         }
-        String envDate = System.getenv("START_DATE");
         return envDate == null || envDate.isBlank() ? defaultDate : LocalDate.parse(envDate);
     }
 
-    private static List<Court> loadCourts() throws Exception {
+    static List<Court> loadCourts() throws Exception {
         Path config = Path.of("config", "courts.json");
         if (!Files.exists(config)) {
             config = Path.of("..", "config", "courts.json");
@@ -70,6 +69,10 @@ public final class Main {
         if (!Files.exists(config)) {
             throw new IllegalStateException("Cannot find config/courts.json from the repository or checker directory.");
         }
+        return loadCourts(config);
+    }
+
+    static List<Court> loadCourts(Path config) throws Exception {
         return new ObjectMapper().readValue(Files.readString(config), new TypeReference<>() {});
     }
 }

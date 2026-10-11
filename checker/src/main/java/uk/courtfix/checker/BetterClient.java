@@ -14,20 +14,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class BetterClient {
-    private static final String ENDPOINT =
+    private static final String ENDPOINT_PREFIX =
             "https://better-admin.org.uk/api/activities/venue/islington-tennis-centre/"
-                    + "activity/highbury-tennis/v2/slots?date=%s";
+                    + "activity/highbury-tennis/v2/slots?date=";
     private static final String REFERER =
             "https://bookings.better.org.uk/location/islington-tennis-centre/highbury-tennis";
 
-    private final HttpClient http = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(20))
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final HttpClient http;
+    private final String endpointPrefix;
+    public BetterClient() {
+        this(HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(20))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build(), ENDPOINT_PREFIX);
+    }
+
+    BetterClient(HttpClient http, String endpointPrefix) {
+        this.http = http;
+        this.endpointPrefix = endpointPrefix;
+    }
 
     public List<Slot> getSlots(LocalDate date) throws IOException, InterruptedException {
-        URI uri = URI.create(ENDPOINT.formatted(date));
+        URI uri = URI.create(endpointPrefix + date);
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(30))
                 .header("Accept", "application/json, text/plain, */*")
@@ -47,7 +55,11 @@ public final class BetterClient {
             throw new IOException("Better availability request failed with HTTP " + response.statusCode());
         }
 
-        JsonNode data = mapper.readTree(response.body()).path("data");
+        return parseSlots(response.body(), date);
+    }
+
+    static List<Slot> parseSlots(String body, LocalDate date) throws IOException {
+        JsonNode data = new ObjectMapper().readTree(body).path("data");
         if (!data.isArray()) {
             throw new IOException("Better response did not contain a data array.");
         }
