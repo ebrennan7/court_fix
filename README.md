@@ -4,7 +4,7 @@ Court Fix will watch Better.co.uk tennis availability at Highbury Fields and not
 
 ## Current milestone
 
-The first milestone is a Java availability checker running on GitHub Actions. It queries Better's public booking endpoint once per date (the response contains all 11 courts), for today through five days ahead, and reports currently bookable slots. The workflow runs every five minutes and can also be started manually.
+The Java availability checker runs on GitHub Actions every five minutes. The installable web app now supports sign-in, per-user court and weekly time preferences, Firestore persistence, and saving a Web Push subscription for each device. The Java workflow does not yet read those preferences or send notifications; that is the next backend milestone.
 
 The endpoint is used by Better's public booking site, but Better does not publish it as a supported third-party API. Its response or access rules may change. The current unauthenticated date window was observed to include today through five days ahead; the checker should fail clearly if Better changes that window.
 
@@ -13,8 +13,15 @@ The endpoint is used by Better's public booking site, but Better does not publis
 - `checker/` — Java 25 command-line checker, built with Maven.
 - `config/courts.json` — current IDs for Highbury Fields Courts 1–11.
 - `.github/workflows/check-courts.yml` — scheduled/manual checker workflow.
-- `site/` — planned Progressive Web App for per-user settings and push subscriptions.
+- `site/` — installable Progressive Web App, service worker, and Firebase client.
+- `firestore.rules` — per-user Firestore access rules.
 - `docs/` — setup and design notes.
+
+## Configure Firebase
+
+Follow [the Firebase setup guide](docs/firebase-setup.md) to create the Spark project, enable email/password sign-in, create the two accounts, publish Firestore rules, and add the local web app configuration. The app expects `site/firebase-config.js`, which is ignored by Git.
+
+For a local preview, run `python3 -m http.server 8000 --directory site` and open `http://localhost:8000`. Firebase Auth and Firestore need a configured Firebase project. Push setup also needs the public VAPID key; the private VAPID key belongs in a GitHub Actions secret.
 
 ## Run the checker locally
 
@@ -46,8 +53,8 @@ Set `DAYS_AHEAD` to change the number of days beyond the start date to query. Th
 
 ## Planned next milestones
 
-1. Build the installable web app and service worker.
-2. Add Firebase Authentication and Firestore with per-user rules and access limited to two users.
+1. Connect the app to the Firebase project and configure the two user accounts.
+2. Extend the Java checker to read each user's preferences and subscriptions from Firestore.
 3. Add Java Web Push delivery and notification deduplication.
 4. Deploy the site to GitHub Pages and configure required Actions secrets.
 

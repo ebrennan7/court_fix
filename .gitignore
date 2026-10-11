@@ -8,4 +8,5 @@ service-account*.json
 *.pem
 *.p8
 *.key
+vapid-private.key
 

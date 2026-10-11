@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#173f35">
+    <meta name="description" content="Get notified when a Highbury Fields tennis court slot matches your schedule.">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./icon.svg">
+    <link rel="stylesheet" href="./styles.css">
+    <title>Court Fix</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Court Fix home"><span class="brand-mark">CF</span><span>Court Fix</span></a>
+        <button id="install-button" class="button button-quiet hidden" type="button">Install app</button>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">HIGHBURY FIELDS · LONDON</p>
+        <h1>Your next court,<br><span>without the refresh.</span></h1>
+        <p class="hero-copy">Choose the courts and weekly times that work for you. We’ll let you know when a matching slot opens.</p>
+        <div class="hero-art" aria-hidden="true"><div class="court-lines"></div><span class="tennis-ball"></span></div>
+      </section>
+
+      <div id="status-message" class="notice" role="status" aria-live="polite">Connecting to Court Fix…</div>
+
+      <section id="sign-in-panel" class="panel sign-in-panel hidden" aria-labelledby="sign-in-title">
+        <div>
+          <p class="eyebrow">YOUR ACCOUNT</p>
+          <h2 id="sign-in-title">Sign in to your tracker</h2>
+          <p class="muted">Access your own saved courts, times and notifications.</p>
+        </div>
+        <form id="sign-in-form" class="stack">
+          <label>Email address<input id="email" name="email" type="email" autocomplete="username" required></label>
+          <label>Password<input id="password" name="password" type="password" autocomplete="current-password" required></label>
+          <button class="button button-primary" type="submit">Sign in</button>
+          <button id="password-reset-button" class="text-button" type="button">Forgot your password?</button>
+        </form>
+        <p class="small muted">Accounts are created by the app administrator. There is no public sign-up.</p>
+      </section>
+
+      <section id="app-panel" class="hidden" aria-labelledby="preferences-title">
+        <div class="account-row"><span id="signed-in-email" class="muted"></span><button id="sign-out-button" class="text-button" type="button">Sign out</button></div>
+        <form id="preferences-form" class="preferences-form">
+          <section class="panel" aria-labelledby="preferences-title">
+            <div class="section-heading"><div><p class="eyebrow">01 · YOUR COURTS</p><h2 id="preferences-title">Where would you play?</h2></div><button id="select-all-courts" class="text-button" type="button">Select all</button></div>
+            <div id="court-list" class="court-grid"></div>
+          </section>
+
+          <section class="panel" aria-labelledby="times-title">
+            <div class="section-heading"><div><p class="eyebrow">02 · YOUR WEEK</p><h2 id="times-title">When are you free?</h2></div></div>
+            <p class="muted">Add the weekly time windows you want us to watch.</p>
+            <div id="time-windows" class="time-windows"></div>
+            <button id="add-window-button" class="button button-outline" type="button"><span aria-hidden="true">＋</span> Add a time window</button>
+          </section>
+
+          <section class="panel notification-panel" aria-labelledby="notifications-title">
+            <div class="notification-icon" aria-hidden="true">↗</div>
+            <div class="notification-copy"><p class="eyebrow">03 · STAY IN THE LOOP</p><h2 id="notifications-title">Get a nudge when a slot opens</h2><p class="muted">Allow notifications on this device. You can set up each of your devices separately.</p></div>
+            <button id="enable-notifications-button" class="button button-dark" type="button">Enable notifications</button>
+            <p id="notification-status" class="small muted notification-status">Notifications aren’t enabled on this device.</p>
+          </section>
+
+          <div class="save-row"><span id="saved-message" class="muted" role="status"></span><button class="button button-primary" type="submit">Save my preferences</button></div>
+        </form>
+      </section>
+
+      <footer><span>Made for a better game.</span><span>Availability checks run every five minutes.</span></footer>
+    </main>
+    <template id="time-window-template">
+      <div class="time-window-row">
+        <label class="day-label">Day<select class="window-day" required>
+          <option value="MONDAY">Monday</option><option value="TUESDAY">Tuesday</option><option value="WEDNESDAY">Wednesday</option><option value="THURSDAY">Thursday</option><option value="FRIDAY">Friday</option><option value="SATURDAY">Saturday</option><option value="SUNDAY">Sunday</option>
+        </select></label>
+        <label>From<input class="window-start" type="time" value="18:00" required></label>
+        <label>To<input class="window-end" type="time" value="20:00" required></label>
+        <button class="remove-window" type="button" aria-label="Remove time window">×</button>
+      </div>
+    </template>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

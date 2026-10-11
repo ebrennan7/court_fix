@@ -1,8 +1,8 @@
 # Architecture notes
 
-The website will be a static Progressive Web App hosted on GitHub Pages. Firebase Authentication and Firestore will hold separate user preferences and browser push subscriptions for two approved accounts. Firestore security rules will scope reads and writes to the signed-in user's UID.
+The website is a static Progressive Web App hosted on GitHub Pages. Firebase Authentication and Cloud Firestore on the no-cost Spark plan hold separate user preferences and browser push subscriptions. There is no public account creation UI; the administrator creates the two accounts. Firestore security rules scope browser reads and writes to the signed-in user's UID. The app uses direct Web Push subscriptions with VAPID rather than Firebase Cloud Messaging.
 
-The Java 25 checker is a batch backend, not an always-on server. GitHub Actions starts it on a five-minute schedule, reads both users' active preferences and subscriptions, checks Better availability, sends Web Push for matching newly-bookable slots, persists deduplication state, then exits. GitHub Actions secrets will hold server credentials and the VAPID private key.
+The Java 25 checker is a batch backend, not an always-on server. GitHub Actions starts it on a five-minute schedule. The next backend milestone is for it to read user preferences and subscriptions, check Better availability, send Web Push for matching newly-bookable slots, persist deduplication state, then exit. GitHub Actions secrets will hold the Firebase service-account credentials and VAPID private key. The app shell and client-side preference/subscription storage are implemented; the checker currently only reports availability.
 
 The Better endpoint is used by its public booking page but has no published third-party API contract. Initial API inspection found that omitting `location_id` returns slots across all 11 Highbury courts for a date, reducing the checker to one request per date. The observed unauthenticated date window was today through five days ahead. Both behaviors must be rechecked during implementation and monitored for changes.
 

@@ -1,0 +1,53 @@
+# Firebase setup
+
+Court Fix uses Firebase Authentication and Cloud Firestore on the Spark plan. The website deliberately has no public account creation form: create the two user accounts in Firebase Authentication, then share their sign-in credentials privately.
+
+## Create the Firebase project
+
+1. Create a Firebase project and select the no-cost Spark plan.
+2. Add a Web app in Project settings and copy its web configuration.
+3. Enable **Authentication → Sign-in method → Email/Password**.
+4. Create the two user accounts under **Authentication → Users**. Users can set their own password from the app's **Forgot your password?** link.
+5. Create a Cloud Firestore database. Choose a location close to the users.
+6. Publish the repository's `firestore.rules` in **Firestore Database → Rules**.
+7. Generate a VAPID key pair for direct Web Push using the Java helper below. Do not use the Firebase Cloud Messaging key pair: this app uses the browser Push API directly, and the Java sender needs the matching private key.
+8. Copy `site/firebase-config.example.js` to `site/firebase-config.js`. Fill in the web configuration and generated public VAPID key. `site/firebase-config.js` is ignored by Git.
+
+Before deploying, add the GitHub Pages hostname (for example, `your-account.github.io`) to **Authentication → Settings → Authorized domains**.
+
+The web configuration and public VAPID key are designed to be included in client code. Never put a Firebase service-account private key or VAPID private key in the site. The generated private key is saved locally as `vapid-private.key` (ignored by Git); it will later belong in GitHub Actions secrets when the Java checker starts sending notifications.
+
+## Generate the Web Push key pair
+
+From the repository root, compile and run the Java 25 helper:
+
+```sh
+mkdir -p target/tools
+javac -d target/tools tools/VapidKeyGenerator.java
+java -cp target/tools VapidKeyGenerator
+```
+
+The helper prints the public key for `site/firebase-config.js` and saves the private key to `vapid-private.key` with owner-only permissions. Keep that file private. Replace `YOUR_PUBLIC_VAPID_KEY` in the local Firebase config with the printed public key. The private key is not needed by the app yet; it will be added as a GitHub Actions secret when push delivery is implemented.
+
+## Data layout
+
+- `users/{uid}/preferences/main` stores that user's selected court IDs and weekly time windows.
+- `users/{uid}/subscriptions/{subscriptionId}` stores each signed-in browser's Web Push endpoint and encryption keys. Each device has its own subscription.
+
+The Firestore rules scope browser reads and writes to the authenticated UID. The Java Admin SDK used by GitHub Actions will bypass these rules, so its service-account key must be stored as a repository secret and never committed.
+
+## Local preview
+
+Service workers and push require HTTPS or localhost. From the repository root, run a local static server such as:
+
+```sh
+python3 -m http.server 8000 --directory site
+```
+
+Then open `http://localhost:8000`. The Firebase file must exist before sign-in can work. On iPhone, use the deployed HTTPS site, add it to the Home Screen, open it from the Home Screen, and enable notifications from inside the app.
+
+## Notes
+
+- These rules authorize any Firebase account in the project, but the app has no sign-up flow; only accounts created by the project administrator can sign in.
+- Keep the project on Spark. If a Spark quota is exceeded, Firebase can pause that product until its quota resets. Review current limits before launch.
+- Browser notification permission is device-specific. Each user should enable notifications separately on each device they want to notify.
