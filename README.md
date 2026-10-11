@@ -53,10 +53,9 @@ Set `DAYS_AHEAD` to change the number of days beyond the start date to query. Th
 
 ## Planned next milestones
 
-1. Connect the app to the Firebase project and configure the two user accounts.
+1. Deploy the site to GitHub Pages and configure its public Firebase and VAPID repository variables.
 2. Extend the Java checker to read each user's preferences and subscriptions from Firestore.
-3. Add Java Web Push delivery and notification deduplication.
-4. Deploy the site to GitHub Pages and configure required Actions secrets.
+3. Add Java Web Push delivery and notification deduplication, then configure the required private GitHub Actions secrets.
 
 ## Privacy and costs
 

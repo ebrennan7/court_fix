@@ -1,0 +1,64 @@
+name: Deploy Court Fix web app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Add public Firebase web configuration
+        env:
+          FIREBASE_CONFIG_JSON: ${{ vars.FIREBASE_CONFIG_JSON }}
+          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+
+          const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG_JSON ?? '');
+          for (const key of ['apiKey', 'authDomain', 'projectId', 'appId']) {
+            if (!firebaseConfig[key]) throw new Error(`Missing Firebase config field: ${key}`);
+          }
+          const vapidPublicKey = process.env.VAPID_PUBLIC_KEY ?? '';
+          if (!vapidPublicKey) throw new Error('Missing VAPID_PUBLIC_KEY repository variable');
+
+          const source = [
+            '// Generated during deployment from public GitHub repository variables.',
+            `export const FIREBASE_CONFIG = ${JSON.stringify(firebaseConfig)};`,
+            `export const VAPID_PUBLIC_KEY = ${JSON.stringify(vapidPublicKey)};`,
+            '',
+          ].join('\n');
+          writeFileSync('site/firebase-config.js', source);
+          NODE
+
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
