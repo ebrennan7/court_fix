@@ -10,7 +10,7 @@ The endpoint is used by Better's public booking site, but Better does not publis
 
 ## Repository structure
 
-- `checker/` — Java 21 command-line checker, built with Maven.
+- `checker/` — Java 25 command-line checker, built with Maven.
 - `config/courts.json` — current IDs for Highbury Fields Courts 1–11.
 - `.github/workflows/check-courts.yml` — scheduled/manual checker workflow.
 - `site/` — planned Progressive Web App for per-user settings and push subscriptions.
@@ -18,7 +18,16 @@ The endpoint is used by Better's public booking site, but Better does not publis
 
 ## Run the checker locally
 
-Requirements: Java 21 and Maven.
+Requirements: Java 25 and Maven. On Apple Silicon with Homebrew:
+
+```sh
+brew install openjdk@25 maven
+echo 'export JAVA_HOME="/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home"' >> ~/.zshrc
+echo 'export PATH="/opt/homebrew/opt/openjdk@25/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+java -version
+mvn -version
+```
 
 From the repository root:
 
