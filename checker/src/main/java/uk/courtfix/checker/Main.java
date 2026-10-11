@@ -5,12 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.cloud.FirestoreClient;
+import com.google.cloud.firestore.Firestore;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public final class Main {
     private static final ZoneId LONDON = ZoneId.of("Europe/London");
@@ -25,6 +33,7 @@ public final class Main {
         Map<String, String> courtNames = courts.stream()
                 .collect(Collectors.toMap(Court::id, Court::name));
         BetterClient better = new BetterClient();
+        List<Slot> observedSlots = new java.util.ArrayList<>();
 
         int checked = 0;
         int available = 0;
@@ -38,6 +47,7 @@ public final class Main {
                     .toList();
             checked += daySlots.size();
             List<Slot> bookable = daySlots.stream().filter(Slot::isBookable).toList();
+            observedSlots.addAll(daySlots);
             available += bookable.size();
             System.out.printf("%s: %d slots, %d bookable%n", date, daySlots.size(), bookable.size());
             for (Slot slot : bookable) {
@@ -50,6 +60,40 @@ public final class Main {
             }
         }
         System.out.printf("Finished: %d slots checked; %d currently bookable.%n", checked, available);
+        String serviceAccount = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+        String vapidPublicKey = System.getenv("VAPID_PUBLIC_KEY");
+        String vapidPrivateKey = System.getenv("VAPID_PRIVATE_KEY");
+        if (isBlank(serviceAccount) && isBlank(vapidPublicKey) && isBlank(vapidPrivateKey)) {
+            System.out.println("Notification delivery is not configured yet; availability check only.");
+            return;
+        }
+        if (isBlank(serviceAccount) || isBlank(vapidPublicKey) || isBlank(vapidPrivateKey)) {
+            throw new IllegalStateException("Configure FIREBASE_SERVICE_ACCOUNT_JSON, VAPID_PUBLIC_KEY, and VAPID_PRIVATE_KEY together.");
+        }
+        vapidPublicKey = vapidPublicKey.strip();
+        vapidPrivateKey = vapidPrivateKey.strip();
+        JsonNode serviceAccountJson = new ObjectMapper().readTree(serviceAccount);
+        String firebaseProjectId = serviceAccountJson.path("project_id").asText();
+        if (firebaseProjectId.isBlank()) throw new IllegalStateException("Firebase service account JSON is missing project_id.");
+        FirebaseOptions options = FirebaseOptions.builder()
+                .setProjectId(firebaseProjectId)
+                .setCredentials(GoogleCredentials.fromStream(new ByteArrayInputStream(serviceAccount.getBytes(StandardCharsets.UTF_8))))
+                .build();
+        FirebaseApp app = FirebaseApp.initializeApp(options, "court-fix-checker");
+        try {
+            Firestore firestore = FirestoreClient.getFirestore(app);
+            try {
+                AvailabilityProcessor processor = new AvailabilityProcessor(
+                        new FirebaseAvailabilityStore(firestore), new WebPushGateway(vapidPublicKey, vapidPrivateKey));
+                AvailabilityProcessor.RunSummary summary = processor.process(observedSlots);
+                System.out.printf("Notifications: %d newly matched, %d sent, %d expired subscriptions, %d will retry.%n",
+                        summary.newNotifications(), summary.sent(), summary.expiredSubscriptions(), summary.retrying());
+            } finally {
+                firestore.close();
+            }
+        } finally {
+            app.delete();
+        }
     }
 
     static LocalDate parseDate(String[] args, LocalDate defaultDate, String envDate) {
@@ -75,4 +119,6 @@ public final class Main {
     static List<Court> loadCourts(Path config) throws Exception {
         return new ObjectMapper().readValue(Files.readString(config), new TypeReference<>() {});
     }
+
+    private static boolean isBlank(String value) { return value == null || value.isBlank(); }
 }

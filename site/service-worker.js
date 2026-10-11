@@ -43,10 +43,16 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url ?? "./", self.location.href).href;
+  let target = new URL(event.notification.data?.url ?? "./", self.location.href);
+  if (target.origin !== self.location.origin) {
+    const bookingTarget = target.href;
+    target = new URL("./", self.location.href);
+    target.searchParams.set("booking", bookingTarget);
+  }
+  const targetUrl = target.href;
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
     const existing = clients.find((client) => client.url.startsWith(self.location.origin));
-    if (existing) return existing.navigate(target).then(() => existing.focus());
-    return self.clients.openWindow(target);
+    if (existing) return existing.navigate(targetUrl).then((client) => client?.focus());
+    return self.clients.openWindow(targetUrl);
   }));
 });

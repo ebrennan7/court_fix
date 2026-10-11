@@ -26,7 +26,7 @@ Set these under **GitHub repository → Settings → Secrets and variables → A
 
 After deployment, open the Pages URL on the iPhone, add it to the Home Screen, launch it from the Home Screen icon, sign in, and tap **Enable notifications**. iOS web push requires an installed Home Screen web app and user permission.
 
-The web configuration and public VAPID key are designed to be included in client code. Never put a Firebase service-account private key or VAPID private key in the site. The generated private key is saved locally as `vapid-private.key` (ignored by Git); it will later belong in GitHub Actions secrets when the Java checker starts sending notifications.
+The web configuration and public VAPID key are designed to be included in client code. Never put a Firebase service-account private key or VAPID private key in the site. The generated private key is saved locally as `vapid-private.key` (ignored by Git); its single-line contents belong only in the GitHub Actions `VAPID_PRIVATE_KEY` secret.
 
 ## Generate the Web Push key pair
 
@@ -45,7 +45,11 @@ The helper prints the public key for `site/firebase-config.js` and saves the pri
 - `users/{uid}/preferences/main` stores that user's selected court IDs and weekly time windows.
 - `users/{uid}/subscriptions/{subscriptionId}` stores each signed-in browser's Web Push endpoint and encryption keys. Each device has its own subscription.
 
-The Firestore rules scope browser reads and writes to the authenticated UID. The Java Admin SDK used by GitHub Actions will bypass these rules, so its service-account key must be stored as a repository secret and never committed.
+The Firestore rules scope browser reads and writes to the authenticated UID. The Java Admin SDK used by GitHub Actions will bypass these rules. Store the service account JSON as the `FIREBASE_SERVICE_ACCOUNT_JSON` repository secret and the VAPID private key file's single-line contents as the `VAPID_PRIVATE_KEY` repository secret. `VAPID_PUBLIC_KEY` is already a repository variable for the public site. Never commit any private key.
+
+The scheduled workflow remains an availability-only check until all three notification values are present. Once configured, it reads user settings and subscriptions, records newly available matching slots in a Firestore outbox, sends Web Push notifications, and retries transient delivery failures on later runs. It removes expired subscriptions automatically when a push service responds with HTTP 404 or 410.
+
+To enable the backend, create a Firebase service account JSON key under **Project settings → Service accounts → Generate new private key**. In GitHub, add the complete JSON file contents as the repository secret `FIREBASE_SERVICE_ACCOUNT_JSON`. Add the single-line contents of local `vapid-private.key` as `VAPID_PRIVATE_KEY`. The public `VAPID_PUBLIC_KEY` variable should match the corresponding public key already used by the deployed site. Do not paste either private value into chat or commit it.
 
 ## Local preview
 

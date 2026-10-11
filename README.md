@@ -4,7 +4,7 @@ Court Fix will watch Better.co.uk tennis availability at Highbury Fields and not
 
 ## Current milestone
 
-The Java availability checker runs on GitHub Actions every five minutes. The installable web app now supports sign-in, per-user court and weekly time preferences, Firestore persistence, and saving a Web Push subscription for each device. The Java workflow does not yet read those preferences or send notifications; that is the next backend milestone.
+The Java checker runs on GitHub Actions every five minutes. The installable web app supports sign-in, per-user court and weekly time preferences, Firestore persistence, and per-device Web Push subscriptions. The Java checker now reads those settings, detects newly bookable matching slots, queues push deliveries, retries transient failures, and removes expired subscriptions. Add the Firebase service account and VAPID private keys as repository secrets to turn on delivery.
 
 The endpoint is used by Better's public booking site, but Better does not publish it as a supported third-party API. Its response or access rules may change. The current unauthenticated date window was observed to include today through five days ahead; the checker should fail clearly if Better changes that window.
 
@@ -53,10 +53,9 @@ Set `DAYS_AHEAD` to change the number of days beyond the start date to query. Th
 
 ## Planned next milestones
 
-1. Deploy the site to GitHub Pages and configure its public Firebase and VAPID repository variables.
-2. Extend the Java checker to read each user's preferences and subscriptions from Firestore.
-3. Add Java Web Push delivery and notification deduplication, then configure the required private GitHub Actions secrets.
+1. Configure the notification secrets and test a real push on each device.
+2. Monitor Better's response and GitHub Actions runs for reliability.
 
 ## Privacy and costs
 
-GitHub Pages requires this repository to remain public on GitHub Free. Do not commit Firebase service-account files, VAPID private keys, or push subscription secrets. The first milestone makes availability checks only; it does not yet store user data or send notifications.
+GitHub Pages requires this repository to remain public on GitHub Free. Do not commit Firebase service-account files, VAPID private keys, or push subscription secrets. Web Push delivery remains off until the `FIREBASE_SERVICE_ACCOUNT_JSON` and `VAPID_PRIVATE_KEY` repository secrets are configured.

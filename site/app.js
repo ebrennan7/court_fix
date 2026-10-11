@@ -285,5 +285,17 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+const bookingRedirect = new URLSearchParams(window.location.search).get("booking");
+if (bookingRedirect) {
+  try {
+    const bookingUrl = new URL(bookingRedirect);
+    if (bookingUrl.protocol === "https:" && bookingUrl.hostname === "bookings.better.org.uk") {
+      window.location.replace(bookingUrl.href);
+    }
+  } catch {
+    // Ignore malformed notification links and continue loading the app.
+  }
+}
+
 renderCourts();
 startFirebase();
