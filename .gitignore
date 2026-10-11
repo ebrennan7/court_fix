@@ -1,0 +1,11 @@
+.DS_Store
+target/
+.idea/
+.vscode/
+*.iml
+site/firebase-config.js
+service-account*.json
+*.pem
+*.p8
+*.key
+
